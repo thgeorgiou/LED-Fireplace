@@ -6,13 +6,12 @@ I created a small LED fireplace which provides some nice ambience to the room at
 the [Aurora](https://github.com/pixelmatix/aurora), a more complete art display project.
 
 ## Usage
-The code depands on the [SmartMatrix3]() and [FastLED](https://github.com/FastLED/FastLED) libraries. Both are available
-through the Arduino Library manager.
+The code depands on the [SmartMatrix3](https://github.com/pixelmatix/SmartMatrix) and [FastLED](https://github.com/FastLED/FastLED) libraries. Both are available through the Arduino Library manager.
 
 ## Features/TODO
-Currently the fire is rendered and the display can be turned on/off by touching a bolt on the frame. In the future I want
-to add a clock and make it configurable (set time, brightness, auto turn on/off) through serial to minize the amount of
-input channels needed.
+Currently the fire is rendered and the display can be turned on/off by touching a bolt on the frame. Touching the bolt cycles
+through three modes, off, on, and on w/ clock. The clock is apperantly programmed when flashing the board so it works fine
+without a way to set it but I still want to implement a serial interface to set the clock and maybe auto turn-on/off on schedule.
 
 # License
 My small code snippet is available in the Public Domain. All libraries are copyrighted by their respective authors.
