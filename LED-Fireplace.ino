@@ -11,6 +11,7 @@ const uint8_t kDmaBufferRows = 4;       // We don't have any memory constraints
 const uint8_t kPanelType = SMARTMATRIX_HUB75_16ROW_MOD8SCAN;   // use SMARTMATRIX_HUB75_16ROW_MOD8SCAN for common 16x32 panels
 const uint8_t kMatrixOptions = (SMARTMATRIX_OPTIONS_NONE);      // see http://docs.pixelmatix.com/SmartMatrix for options
 const uint8_t kBackgroundLayerOptions = (SM_BACKGROUND_OPTIONS_NONE);
+const uint8_t kIndexedLayerOptions = (SM_INDEXED_OPTIONS_NONE);
 
 /* Allocate buffer and one layer */
 SMARTMATRIX_ALLOCATE_BUFFERS(matrix, kMatrixWidth, kMatrixHeight, kRefreshDepth, kDmaBufferRows, kPanelType, kMatrixOptions);
@@ -28,6 +29,9 @@ byte _heat[32 * 16];
 
 /* Whether the screen is currently running? For sleepmode */
 bool isRunning = true;
+
+/* Rate limit clock refresh */
+unsigned long lastClockRefresh = 0;
 
 /* Return a color from the palette */
 rgb24 getColor(int index);
@@ -118,7 +122,11 @@ void loop() {
 
   // Refresh screen
   backgroundLayer.swapBuffers();
-  drawClock();
+
+  if (millis() - lastClockRefresh > 1000) {
+    lastClockRefresh = millis();
+    drawClock();
+  }  
   delay(13);
 }
 
