@@ -27,8 +27,8 @@ byte sparking = 30;
 /* Buffer for flames */
 byte _heat[32 * 16];
 
-/* Whether the screen is currently running? For sleepmode */
-bool isRunning = true;
+/* 0 = off, 1 = on, 2 = on w/ clock */
+byte state = 1;
 
 /* Rate limit clock refresh */
 unsigned long lastClockRefresh = 0;
@@ -56,13 +56,14 @@ void setup() {
   // Enable color correction
   backgroundLayer.enableColorCorrection(true);
 
-  // Empty screen
+  // Empty background
   backgroundLayer.fillScreen({0, 0, 0});
   backgroundLayer.swapBuffers();
 
   // Empty clock layer
   indexedLayer.fillScreen(0);
   indexedLayer.setFont(gohufont11b);
+  indexedLayer.setIndexedColor(1, {150, 150, 150});
   indexedLayer.swapBuffers(false);
 }
 
@@ -70,17 +71,21 @@ void loop() {
   uint16_t touch = touchRead(15);
 
   if (touch > 2000) {
-    isRunning = !isRunning;
+    state++;
+    if (state == 3) state = 0;
 
-    if (isRunning == false) {
+    // If state == 0 (off), clear screen)
+    if (state == 0) {
       backgroundLayer.fillScreen({0, 0, 0});
+      indexedLayer.fillScreen(0);
       backgroundLayer.swapBuffers();
+      indexedLayer.swapBuffers();
     }
   }
 
   while (touchRead(15) > 2000) {}
 
-  if (isRunning == false) return;
+  if (state == 0) return;
 
   // Step 1. Cool down every cell a little
   for (int x = 0; x < 32; x++) {
@@ -123,7 +128,7 @@ void loop() {
   // Refresh screen
   backgroundLayer.swapBuffers();
 
-  if (millis() - lastClockRefresh > 1000) {
+  if (millis() - lastClockRefresh > 1000 && state == 2) {
     lastClockRefresh = millis();
     drawClock();
   }  
