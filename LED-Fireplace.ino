@@ -1,11 +1,12 @@
 #include <SmartMatrix3.h>
-#include <FastLED.h> // For some macros, maybe this dependency can be dropped
+#include <FastLED.h> // For some macros
+#include <TimeLib.h>
 
 // Matrix
 #define COLOR_DEPTH 24
-const uint8_t kMatrixWidth = 32;		// 32x16
+const uint8_t kMatrixWidth = 32;    // 32x16
 const uint8_t kMatrixHeight = 16;
-const uint8_t kRefreshDepth = 36;		// Known to work with this display, 32x32 would require another value
+const uint8_t kRefreshDepth = 36;   // Known to work with this display, 32x32 would require another value
 const uint8_t kDmaBufferRows = 4;       // We don't have any memory constraints
 const uint8_t kPanelType = SMARTMATRIX_HUB75_16ROW_MOD8SCAN;   // use SMARTMATRIX_HUB75_16ROW_MOD8SCAN for common 16x32 panels
 const uint8_t kMatrixOptions = (SMARTMATRIX_OPTIONS_NONE);      // see http://docs.pixelmatix.com/SmartMatrix for options
@@ -14,6 +15,7 @@ const uint8_t kBackgroundLayerOptions = (SM_BACKGROUND_OPTIONS_NONE);
 /* Allocate buffer and one layer */
 SMARTMATRIX_ALLOCATE_BUFFERS(matrix, kMatrixWidth, kMatrixHeight, kRefreshDepth, kDmaBufferRows, kPanelType, kMatrixOptions);
 SMARTMATRIX_ALLOCATE_BACKGROUND_LAYER(backgroundLayer, kMatrixWidth, kMatrixHeight, COLOR_DEPTH, kBackgroundLayerOptions);
+SMARTMATRIX_ALLOCATE_INDEXED_LAYER(indexedLayer, kMatrixWidth, kMatrixHeight, COLOR_DEPTH, kIndexedLayerOptions);
 
 /* How quickly does the flame cool? */
 byte cooling = 100;
@@ -30,10 +32,20 @@ bool isRunning = true;
 /* Return a color from the palette */
 rgb24 getColor(int index);
 
+/* Get the time from the internal RTC */
+time_t getTeensy3Time();
+
+/* Draw the time on the display */
+void drawClock();
+
 /* First time setup */
 void setup() {
+  // Use internal RTC
+  setSyncProvider(getTeensy3Time);
+
   // Prepare matrix
   matrix.addLayer(&backgroundLayer);
+  matrix.addLayer(&indexedLayer);
   matrix.begin();
   matrix.setBrightness(100 * (255 / 100)); // Max brightness
 
@@ -43,15 +55,17 @@ void setup() {
   // Empty screen
   backgroundLayer.fillScreen({0, 0, 0});
   backgroundLayer.swapBuffers();
+
+  // Empty clock layer
+  indexedLayer.fillScreen(0);
+  indexedLayer.setFont(gohufont11b);
+  indexedLayer.swapBuffers(false);
 }
 
 void loop() {
-  // Get a capacitive touch reading on pin 15
   uint16_t touch = touchRead(15);
-  
-  // If the user is touching the bolt
+
   if (touch > 2000) {
-    // Turn the display on/off
     isRunning = !isRunning;
 
     if (isRunning == false) {
@@ -60,10 +74,8 @@ void loop() {
     }
   }
 
-  // Some primitive debouncing
-  while(touchRead(15) > 2000) {}
+  while (touchRead(15) > 2000) {}
 
-  // If the display is not running, no need to render the frame
   if (isRunning == false) return;
 
   // Step 1. Cool down every cell a little
@@ -106,11 +118,14 @@ void loop() {
 
   // Refresh screen
   backgroundLayer.swapBuffers();
+  drawClock();
   delay(13);
 }
 
-/* Returns a color from the palette */
-/* Red -> Orange -> White */
+time_t getTeensy3Time() {
+  return Teensy3Clock.get();
+}
+
 rgb24 getColor(int index) {
   byte b = (byte) (index * (399 / 233));
 
@@ -119,5 +134,23 @@ rgb24 getColor(int index) {
     (uint8_t) scale8(qsub8(b, 83), 233),
     (uint8_t) scale8(qsub8(8, 83 * 2), 233)
   };
+}
+
+void drawClock() {
+  int x = kMatrixWidth / 2 - 15;
+  char timeBuffer[9];
+  // clear screen before writing new text
+  indexedLayer.fillScreen(0);
+
+  /* Draw Clock to SmartMatrix */
+  uint8_t hours = hour();
+  if (hours > 12)
+    hours -= 12;
+  sprintf(timeBuffer, "%d:%02d", hours, minute());
+  if (hours < 10)
+    x += 3;
+  indexedLayer.setFont(gohufont11b);
+  indexedLayer.drawString(x, kMatrixHeight / 2 - 6, 1, timeBuffer);
+  indexedLayer.swapBuffers();
 }
 
