@@ -1,9 +1,11 @@
 # LED-Fireplace
-A little LED panel creating atmosphere
+![Photo of the LED Fireplace](http://thgeorgiou.com/images/2016-03-25-LED-Fireplace/header.jpg)
+
+A little LED panel creating atmosphere ([Blog post](http://thgeorgiou.com/posts/2016-03-25-LED-Fireplace/))
 
 Using a [Teensy 3.1](https://www.pjrc.com/teensy/) and [a 32x16 Pixel Matrix](https://www.adafruit.com/product/420)
 I created a small LED fireplace which provides some nice ambience to the room at dark. The code is heavily based on
-the [Aurora](https://github.com/pixelmatix/aurora), a more complete art display project.
+the [Aurora](https://github.com/pixelmatix/aurora), a more complete art display project. 
 
 ## Usage
 The code depands on the [SmartMatrix3](https://github.com/pixelmatix/SmartMatrix) and [FastLED](https://github.com/FastLED/FastLED) libraries. Both are available through the Arduino Library manager.
